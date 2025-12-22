@@ -197,3 +197,6 @@ __pycache__/
 
 # Auto-generated files
 adapter-runtime.bundled.ts
+
+# VSCode
+.vscode

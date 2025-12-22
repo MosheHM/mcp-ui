@@ -1,0 +1,25 @@
+{
+    "name": "@mcp-ui/angular-client",
+    "version": "0.1.0",
+    "description": "Angular client SDK for MCP Apps",
+    "scripts": {
+        "build": "ng-packagr -p ng-package.json"
+    },
+    "peerDependencies": {
+        "@angular/common": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0",
+        "@angular/core": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/ext-apps": "https://github.com/modelcontextprotocol/ext-apps/archive/192d29f2ba122d0ad22e4456b9fd6b1e0fa7110f.tar.gz",
+        "@modelcontextprotocol/sdk": "^1.22.0",
+        "tslib": "^2.3.0",
+        "zod": "~3.23.8"
+    },
+    "devDependencies": {
+        "@angular-devkit/build-angular": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0",
+        "@angular/compiler": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0",
+        "@angular/compiler-cli": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0",
+        "ng-packagr": "^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0",
+        "typescript": "~5.6.2"
+    }
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MCP Sandbox Proxy</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+<script>
+  // Notify host that proxy is ready
+  window.parent.postMessage({
+    jsonrpc: "2.0",
+    method: "ui/notifications/sandbox-proxy-ready",
+    params: {}
+  }, "*");
+
+  // Listen for resource ready notification
+  window.addEventListener("message", (event) => {
+    const data = event.data;
+    if (data && data.method === "ui/notifications/sandbox-resource-ready") {
+      const iframe = document.createElement("iframe");
+      if (data.params.sandbox) {
+          iframe.sandbox = data.params.sandbox;
+      }
+      iframe.srcdoc = data.params.html;
+      document.body.appendChild(iframe);
+    }
+  });
+</script>
+</body>
+</html>
