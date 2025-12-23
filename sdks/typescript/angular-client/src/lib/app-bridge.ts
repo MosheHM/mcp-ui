@@ -3,14 +3,22 @@ import { ZodLiteral, ZodObject } from "zod";
 
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
+    CallToolRequest,
     CallToolRequestSchema,
+    CallToolResult,
     CallToolResultSchema,
     Implementation,
+    ListPromptsRequest,
     ListPromptsRequestSchema,
+    ListPromptsResult,
     ListPromptsResultSchema,
+    ListResourcesRequest,
     ListResourcesRequestSchema,
+    ListResourcesResult,
     ListResourcesResultSchema,
+    ListResourceTemplatesRequest,
     ListResourceTemplatesRequestSchema,
+    ListResourceTemplatesResult,
     ListResourceTemplatesResultSchema,
     LoggingMessageNotification,
     LoggingMessageNotificationSchema,
@@ -18,7 +26,9 @@ import {
     PingRequest,
     PingRequestSchema,
     PromptListChangedNotificationSchema,
+    ReadResourceRequest,
     ReadResourceRequestSchema,
+    ReadResourceResult,
     ReadResourceResultSchema,
     Request,
     ResourceListChangedNotificationSchema,
@@ -58,8 +68,13 @@ import {
     McpUiSandboxProxyReadyNotification,
     McpUiSandboxProxyReadyNotificationSchema,
     McpUiSizeChangeNotificationSchema,
+    McpUiToolCancelledNotification,
 } from "./types";
 export * from "./types";
+
+export const RESOURCE_URI_META_KEY = "ui/resourceUri";
+export const RESOURCE_MIME_TYPE = "text/html+mcp";
+export const SANDBOX_PROXY_READY_METHOD = "ui/notifications/sandbox-proxy-ready";
 // export { PostMessageTransport } from "./message-transport"; // Commented out as we might not need it or it might be missing
 
 /**
@@ -88,7 +103,7 @@ export const SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION];
  *
  * @internal
  */
-type RequestHandlerExtra = Parameters<
+export type RequestHandlerExtra = Parameters<
     Parameters<AppBridge["setRequestHandler"]>[1]
 >[1];
 
@@ -205,6 +220,14 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
         // TODO
     }
 
+    assertTaskCapability(method: Request["method"]): void {
+        // TODO
+    }
+
+    assertTaskHandlerCapability(method: Request["method"]): void {
+        // TODO
+    }
+
     getCapabilities(): McpUiHostCapabilities {
         return this._capabilities;
     }
@@ -242,7 +265,7 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
             if (deepEqual(oldValue, newValue)) {
                 continue;
             }
-            changes[key] = newValue as any;
+            (changes as any)[key] = newValue;
             hasChanges = true;
         }
         if (hasChanges) {
@@ -275,6 +298,13 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
         });
     }
 
+    sendToolCancelled(params: McpUiToolCancelledNotification["params"]) {
+        return this.notification(<McpUiToolCancelledNotification>{
+            method: "ui/notifications/tool-cancelled",
+            params,
+        });
+    }
+
     sendSandboxResourceReady(
         params: McpUiSandboxResourceReadyNotification["params"],
     ) {
@@ -282,6 +312,20 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
             method: "ui/notifications/sandbox-resource-ready",
             params,
         });
+    }
+
+    teardownResource(
+        params: McpUiResourceTeardownRequest["params"],
+        options?: RequestOptions,
+    ) {
+        return this.request(
+            <McpUiResourceTeardownRequest>{
+                method: "ui/resource-teardown",
+                params,
+            },
+            McpUiResourceTeardownResultSchema as any,
+            options,
+        );
     }
 
     sendResourceTeardown(
@@ -293,8 +337,82 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
                 method: "ui/resource-teardown",
                 params,
             },
-            McpUiResourceTeardownResultSchema,
+            McpUiResourceTeardownResultSchema as any,
             options,
+        );
+    }
+
+    sendToolListChanged() {
+        return this.notification({
+            method: "notifications/tools/list_changed",
+        } as Notification);
+    }
+
+    sendResourceListChanged() {
+        return this.notification({
+            method: "notifications/resources/list_changed",
+        } as Notification);
+    }
+
+    sendPromptListChanged() {
+        return this.notification({
+            method: "notifications/prompts/list_changed",
+        } as Notification);
+    }
+
+    set oncalltool(
+        callback: (
+            params: CallToolRequest["params"],
+            extra: RequestHandlerExtra,
+        ) => Promise<CallToolResult>,
+    ) {
+        this.setRequestHandler(CallToolRequestSchema as any, (request, extra) =>
+            callback(request.params, extra),
+        );
+    }
+
+    set onlistresources(
+        callback: (
+            params: ListResourcesRequest["params"],
+            extra: RequestHandlerExtra,
+        ) => Promise<ListResourcesResult>,
+    ) {
+        this.setRequestHandler(ListResourcesRequestSchema as any, (request, extra) =>
+            callback(request.params, extra),
+        );
+    }
+
+    set onlistresourcetemplates(
+        callback: (
+            params: ListResourceTemplatesRequest["params"],
+            extra: RequestHandlerExtra,
+        ) => Promise<ListResourceTemplatesResult>,
+    ) {
+        this.setRequestHandler(
+            ListResourceTemplatesRequestSchema as any,
+            (request, extra) => callback(request.params, extra),
+        );
+    }
+
+    set onreadresource(
+        callback: (
+            params: ReadResourceRequest["params"],
+            extra: RequestHandlerExtra,
+        ) => Promise<ReadResourceResult>,
+    ) {
+        this.setRequestHandler(ReadResourceRequestSchema as any, (request, extra) =>
+            callback(request.params, extra),
+        );
+    }
+
+    set onlistprompts(
+        callback: (
+            params: ListPromptsRequest["params"],
+            extra: RequestHandlerExtra,
+        ) => Promise<ListPromptsResult>,
+    ) {
+        this.setRequestHandler(ListPromptsRequestSchema as any, (request, extra) =>
+            callback(request.params, extra),
         );
     }
 
@@ -304,9 +422,9 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
         }>,
         Res extends ZodObject<{}>,
     >(requestSchema: Req, resultSchema: Res) {
-        this.setRequestHandler(requestSchema, async (request, extra) => {
+        this.setRequestHandler(requestSchema as any, async (request, extra) => {
             console.log(`Forwarding request ${request.method} from MCP UI client`);
-            return this._client.request(request, resultSchema, {
+            return this._client.request(request, resultSchema as any, {
                 signal: extra.signal,
             });
         });
@@ -314,7 +432,7 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
     private forwardNotification<
         N extends ZodObject<{ method: ZodLiteral<string> }>,
     >(notificationSchema: N) {
-        this.setNotificationHandler(notificationSchema, async (notification) => {
+        this.setNotificationHandler(notificationSchema as any, async (notification) => {
             console.log(
                 `Forwarding notification ${notification.method} from MCP UI client`,
             );
@@ -329,29 +447,29 @@ export class AppBridge extends Protocol<Request, Notification, Result> {
         }
 
         if (serverCapabilities.tools) {
-            this.forwardRequest(CallToolRequestSchema, CallToolResultSchema);
+            this.forwardRequest(CallToolRequestSchema as any, CallToolResultSchema as any);
             if (serverCapabilities.tools.listChanged) {
-                this.forwardNotification(ToolListChangedNotificationSchema);
+                this.forwardNotification(ToolListChangedNotificationSchema as any);
             }
         }
         if (serverCapabilities.resources) {
             this.forwardRequest(
-                ListResourcesRequestSchema,
-                ListResourcesResultSchema,
+                ListResourcesRequestSchema as any,
+                ListResourcesResultSchema as any,
             );
             this.forwardRequest(
-                ListResourceTemplatesRequestSchema,
-                ListResourceTemplatesResultSchema,
+                ListResourceTemplatesRequestSchema as any,
+                ListResourceTemplatesResultSchema as any,
             );
-            this.forwardRequest(ReadResourceRequestSchema, ReadResourceResultSchema);
+            this.forwardRequest(ReadResourceRequestSchema as any, ReadResourceResultSchema as any);
             if (serverCapabilities.resources.listChanged) {
-                this.forwardNotification(ResourceListChangedNotificationSchema);
+                this.forwardNotification(ResourceListChangedNotificationSchema as any);
             }
         }
         if (serverCapabilities.prompts) {
-            this.forwardRequest(ListPromptsRequestSchema, ListPromptsResultSchema);
+            this.forwardRequest(ListPromptsRequestSchema as any, ListPromptsResultSchema as any);
             if (serverCapabilities.prompts.listChanged) {
-                this.forwardNotification(PromptListChangedNotificationSchema);
+                this.forwardNotification(PromptListChangedNotificationSchema as any);
             }
         }
 

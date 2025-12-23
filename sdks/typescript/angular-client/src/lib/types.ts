@@ -70,6 +70,154 @@ export const McpUiOpenLinkRequestSchema = RequestSchema.extend({
     }),
 });
 
+export const McpUiOpenLinkResultSchema: z.ZodType<McpUiOpenLinkResult> =
+    z.object({
+        isError: z.boolean().optional(),
+    });
+
+export const McpUiMessageRequestSchema = RequestSchema.extend({
+    method: z.literal("ui/message"),
+    params: z.object({
+        role: z.literal("user"),
+        content: z.array(ContentBlockSchema as any),
+    }),
+}) as any;
+
+export const McpUiMessageResultSchema: z.ZodType<McpUiMessageResult> = z.object(
+    {
+        isError: z.boolean().optional(),
+    },
+);
+
+export const McpUiSandboxProxyReadyNotificationSchema = z.object({
+    method: z.literal("ui/notifications/sandbox-proxy-ready"),
+    params: z.object({}),
+});
+
+export const McpUiSandboxResourceReadyNotificationSchema = z.object({
+    method: z.literal("ui/notifications/sandbox-resource-ready"),
+    params: z.object({
+        html: z.string(),
+        sandbox: z.string().optional(),
+    }),
+});
+
+export const McpUiSizeChangeNotificationSchema = z.object({
+    method: z.literal("ui/notifications/size-change"),
+    params: z.object({
+        width: z.number().optional(),
+        height: z.number().optional(),
+    }),
+});
+
+export const McpUiToolInputNotificationSchema = z.object({
+    method: z.literal("ui/notifications/tool-input"),
+    params: z.object({
+        arguments: z.record(z.string(), z.unknown()).optional(),
+    }),
+});
+
+export const McpUiToolCancelledNotificationSchema = z.object({
+    method: z.literal("ui/notifications/tool-cancelled"),
+    params: z.object({}),
+});
+
+export const McpUiToolInputPartialNotificationSchema = z.object({
+    method: z.literal("ui/notifications/tool-input-partial"),
+    params: z.object({
+        arguments: z.record(z.string(), z.unknown()).optional(),
+    }),
+});
+
+export const McpUiToolResultNotificationSchema = z.object({
+    method: z.literal("ui/notifications/tool-result"),
+    params: CallToolResultSchema as any,
+}) as any;
+
+export const McpUiHostContextSchema: z.ZodType<McpUiHostContext> = z.object({
+    toolInfo: z
+        .object({
+            id: RequestIdSchema as unknown as z.ZodType<RequestId>,
+            tool: ToolSchema as unknown as z.ZodType<Tool>,
+        })
+        .optional(),
+    theme: z.enum(["light", "dark"]).optional(),
+    displayMode: z.enum(["inline", "fullscreen", "pip"]).optional(),
+    availableDisplayModes: z.array(z.string()).optional(),
+    viewport: z
+        .object({
+            width: z.number(),
+            height: z.number(),
+            maxHeight: z.number().optional(),
+            maxWidth: z.number().optional(),
+        })
+        .optional(),
+    locale: z.string().optional(),
+    timeZone: z.string().optional(),
+    userAgent: z.string().optional(),
+    platform: z.enum(["web", "desktop", "mobile"]).optional(),
+    deviceCapabilities: z
+        .object({
+            touch: z.boolean().optional(),
+            hover: z.boolean().optional(),
+        })
+        .optional(),
+    safeAreaInsets: z
+        .object({
+            top: z.number(),
+            right: z.number(),
+            bottom: z.number(),
+            left: z.number(),
+        })
+        .optional(),
+}) as any;
+
+export const McpUiHostContextChangedNotificationSchema = z.object({
+    method: z.literal("ui/notifications/host-context-changed"),
+    params: McpUiHostContextSchema,
+});
+
+export const McpUiHostCapabilitiesSchema: z.ZodType<McpUiHostCapabilities> =
+    z.object({
+        experimental: z.object({}).optional(),
+        openLinks: z.object({}).optional(),
+        serverTools: z
+            .object({
+                listChanged: z.boolean().optional(),
+            })
+            .optional(),
+        serverResources: z
+            .object({
+                listChanged: z.boolean().optional(),
+            })
+            .optional(),
+        logging: z.object({}).optional(),
+    }) as any;
+
+export const McpUiAppCapabilitiesSchema: z.ZodType<McpUiAppCapabilities> =
+    z.object({
+        experimental: z.object({}).optional(),
+        tools: z
+            .object({
+                listChanged: z.boolean().optional(),
+            })
+            .optional(),
+    });
+
+// Local definition to avoid inference issues with SDK schema
+const LocalImplementationSchema = z.object({
+    name: z.string(),
+    version: z.string(),
+});
+
+export const McpUiInitializeResultSchema: z.ZodType<McpUiInitializeResult> =
+    z.object({
+        protocolVersion: z.string(),
+        hostInfo: LocalImplementationSchema,
+        hostCapabilities: McpUiHostCapabilitiesSchema,
+        hostContext: McpUiHostContextSchema,
+    }) as any;
+
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyOpenLinkRequest = VerifySchemaMatches<
     typeof McpUiOpenLinkRequestSchema,
@@ -100,10 +248,6 @@ export interface McpUiOpenLinkResult {
  * Runtime validation schema for {@link McpUiOpenLinkResult}.
  * @internal
  */
-export const McpUiOpenLinkResultSchema: z.ZodType<McpUiOpenLinkResult> =
-    z.object({
-        isError: z.boolean().optional(),
-    });
 
 /**
  * Request to send a message to the host's chat interface.
@@ -128,13 +272,6 @@ export interface McpUiMessageRequest {
  * Runtime validation schema for {@link McpUiMessageRequest}.
  * @internal
  */
-export const McpUiMessageRequestSchema = RequestSchema.extend({
-    method: z.literal("ui/message"),
-    params: z.object({
-        role: z.literal("user"),
-        content: z.array(ContentBlockSchema),
-    }),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyMessageRequest = VerifySchemaMatches<
@@ -168,11 +305,6 @@ export interface McpUiMessageResult {
  * Runtime validation schema for {@link McpUiMessageResult}.
  * @internal
  */
-export const McpUiMessageResultSchema: z.ZodType<McpUiMessageResult> = z.object(
-    {
-        isError: z.boolean().optional(),
-    },
-);
 
 // McpUiIframeReadyNotification removed - replaced by standard MCP initialization
 // The SDK's oninitialized callback now handles the ready signal
@@ -197,10 +329,6 @@ export interface McpUiSandboxProxyReadyNotification {
  * Runtime validation schema for {@link McpUiSandboxProxyReadyNotification}.
  * @internal
  */
-export const McpUiSandboxProxyReadyNotificationSchema = z.object({
-    method: z.literal("ui/notifications/sandbox-proxy-ready"),
-    params: z.object({}),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifySandboxProxyReadyNotification = VerifySchemaMatches<
@@ -233,13 +361,6 @@ export interface McpUiSandboxResourceReadyNotification {
  * Runtime validation schema for {@link McpUiSandboxResourceReadyNotification}.
  * @internal
  */
-export const McpUiSandboxResourceReadyNotificationSchema = z.object({
-    method: z.literal("ui/notifications/sandbox-resource-ready"),
-    params: z.object({
-        html: z.string(),
-        sandbox: z.string().optional(),
-    }),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifySandboxResourceReadyNotification = VerifySchemaMatches<
@@ -275,13 +396,6 @@ export interface McpUiSizeChangeNotification {
  * Runtime validation schema for {@link McpUiSizeChangeNotification}.
  * @internal
  */
-export const McpUiSizeChangeNotificationSchema = z.object({
-    method: z.literal("ui/notifications/size-change"),
-    params: z.object({
-        width: z.number().optional(),
-        height: z.number().optional(),
-    }),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifySizeChangeNotification = VerifySchemaMatches<
@@ -311,18 +425,28 @@ export interface McpUiToolInputNotification {
  * Runtime validation schema for {@link McpUiToolInputNotification}.
  * @internal
  */
-export const McpUiToolInputNotificationSchema = z.object({
-    method: z.literal("ui/notifications/tool-input"),
-    params: z.object({
-        arguments: z.record(z.string(), z.unknown()).optional(),
-    }),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyToolInputNotification = VerifySchemaMatches<
     typeof McpUiToolInputNotificationSchema,
     McpUiToolInputNotification
 >;
+
+/**
+ * Notification that tool execution was cancelled (Host → Guest UI).
+ * 
+ * The host MAY send this notification if the tool execution was cancelled
+ * before completion (e.g. by user action).
+ */
+export interface McpUiToolCancelledNotification {
+    method: "ui/notifications/tool-cancelled";
+    params: {};
+}
+
+/**
+ * Runtime validation schema for {@link McpUiToolCancelledNotification}.
+ * @internal
+ */
 
 /**
  * Notification containing partial/streaming tool arguments (Host → Guest UI).
@@ -350,12 +474,6 @@ export interface McpUiToolInputPartialNotification {
  * Runtime validation schema for {@link McpUiToolInputPartialNotification}.
  * @internal
  */
-export const McpUiToolInputPartialNotificationSchema = z.object({
-    method: z.literal("ui/notifications/tool-input-partial"),
-    params: z.object({
-        arguments: z.record(z.string(), z.unknown()).optional(),
-    }),
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyToolInputPartialNotification = VerifySchemaMatches<
@@ -384,10 +502,6 @@ export interface McpUiToolResultNotification {
  * Runtime validation schema for {@link McpUiToolResultNotification}.
  * @internal
  */
-export const McpUiToolResultNotificationSchema = z.object({
-    method: z.literal("ui/notifications/tool-result"),
-    params: CallToolResultSchema,
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyToolResultNotification = VerifySchemaMatches<
@@ -494,43 +608,6 @@ export interface McpUiHostContext {
  * Runtime validation schema for {@link McpUiHostContext}.
  * @internal
  */
-export const McpUiHostContextSchema: z.ZodType<McpUiHostContext> = z.object({
-    toolInfo: z
-        .object({
-            id: RequestIdSchema,
-            tool: ToolSchema,
-        })
-        .optional(),
-    theme: z.enum(["light", "dark"]).optional(),
-    displayMode: z.enum(["inline", "fullscreen", "pip"]).optional(),
-    availableDisplayModes: z.array(z.string()).optional(),
-    viewport: z
-        .object({
-            width: z.number(),
-            height: z.number(),
-            maxHeight: z.number().optional(),
-            maxWidth: z.number().optional(),
-        })
-        .optional(),
-    locale: z.string().optional(),
-    timeZone: z.string().optional(),
-    userAgent: z.string().optional(),
-    platform: z.enum(["web", "desktop", "mobile"]).optional(),
-    deviceCapabilities: z
-        .object({
-            touch: z.boolean().optional(),
-            hover: z.boolean().optional(),
-        })
-        .optional(),
-    safeAreaInsets: z
-        .object({
-            top: z.number(),
-            right: z.number(),
-            bottom: z.number(),
-            left: z.number(),
-        })
-        .optional(),
-});
 
 /**
  * Notification that host context has changed (Host → Guest UI).
@@ -556,10 +633,6 @@ export interface McpUiHostContextChangedNotification {
  * Runtime validation schema for {@link McpUiHostContextChangedNotification}.
  * @internal
  */
-export const McpUiHostContextChangedNotificationSchema = z.object({
-    method: z.literal("ui/notifications/host-context-changed"),
-    params: McpUiHostContextSchema,
-});
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyHostContextChangedNotification = VerifySchemaMatches<
@@ -589,10 +662,10 @@ export interface McpUiResourceTeardownRequest {
  * Runtime validation schema for {@link McpUiResourceTeardownRequest}.
  * @internal
  */
-export const McpUiResourceTeardownRequestSchema = RequestSchema.extend({
+export const McpUiResourceTeardownRequestSchema: z.ZodType<McpUiResourceTeardownRequest> = RequestSchema.extend({
     method: z.literal("ui/resource-teardown"),
     params: z.object({}),
-});
+}) as any;
 
 /** @internal - Compile-time verification that schema matches interface */
 type _VerifyResourceTeardownRequest = VerifySchemaMatches<
@@ -614,25 +687,24 @@ export interface McpUiResourceTeardownResult { }
  * Runtime validation schema for {@link McpUiResourceTeardownResult}.
  * @internal
  */
+// Force cast to satisfy TS because SDK (implied) Zod types differ from local node_modules Zod types
 export const McpUiResourceTeardownResultSchema: z.ZodType<McpUiResourceTeardownResult> =
-    EmptyResultSchema;
-
+    EmptyResultSchema as any;
+// ...
 /**
- * Capabilities supported by the host application.
- *
- * Hosts declare these capabilities during the initialization handshake. Guest UIs
- * can check capabilities before attempting to use specific features.
+ * Hosts declare these capabilities during the initialization handshake.Guest UIs
+    * can check capabilities before attempting to use specific features.
  *
  * @example Check if host supports opening links
- * ```typescript
+    * ```typescript
  * const result = await app.connect(transport);
  * if (result.hostCapabilities.openLinks) {
  *   await app.sendOpenLink({ url: "https://example.com" });
  * }
  * ```
- *
- * @see {@link McpUiInitializeResult} for the initialization result that includes these capabilities
- */
+    *
+ * @see { @link McpUiInitializeResult } for the initialization result that includes these capabilities
+    */
 export interface McpUiHostCapabilities {
     /** Experimental features (structure TBD) */
     experimental?: {};
@@ -656,22 +728,6 @@ export interface McpUiHostCapabilities {
  * Runtime validation schema for {@link McpUiHostCapabilities}.
  * @internal
  */
-export const McpUiHostCapabilitiesSchema: z.ZodType<McpUiHostCapabilities> =
-    z.object({
-        experimental: z.object({}).optional(),
-        openLinks: z.object({}).optional(),
-        serverTools: z
-            .object({
-                listChanged: z.boolean().optional(),
-            })
-            .optional(),
-        serverResources: z
-            .object({
-                listChanged: z.boolean().optional(),
-            })
-            .optional(),
-        logging: z.object({}).optional(),
-    });
 
 /**
  * Capabilities provided by the Guest UI (App).
@@ -706,15 +762,6 @@ export interface McpUiAppCapabilities {
  * Runtime validation schema for {@link McpUiAppCapabilities}.
  * @internal
  */
-export const McpUiAppCapabilitiesSchema: z.ZodType<McpUiAppCapabilities> =
-    z.object({
-        experimental: z.object({}).optional(),
-        tools: z
-            .object({
-                listChanged: z.boolean().optional(),
-            })
-            .optional(),
-    });
 
 /**
  * Initialization request sent from Guest UI to Host.
@@ -740,14 +787,10 @@ export interface McpUiInitializeRequest {
     };
 }
 
-/**
- * Runtime validation schema for {@link McpUiInitializeRequest}.
- * @internal
- */
-export const McpUiInitializeRequestSchema = RequestSchema.extend({
+export const McpUiInitializeRequestSchema: z.ZodType<McpUiInitializeRequest> = RequestSchema.extend({
     method: z.literal("ui/initialize"),
     params: z.object({
-        appInfo: ImplementationSchema,
+        appInfo: LocalImplementationSchema,
         appCapabilities: McpUiAppCapabilitiesSchema,
         protocolVersion: z.string(),
     }),
@@ -787,13 +830,6 @@ export interface McpUiInitializeResult {
  * Runtime validation schema for {@link McpUiInitializeResult}.
  * @internal
  */
-export const McpUiInitializeResultSchema: z.ZodType<McpUiInitializeResult> =
-    z.object({
-        protocolVersion: z.string(),
-        hostInfo: ImplementationSchema,
-        hostCapabilities: McpUiHostCapabilitiesSchema,
-        hostContext: McpUiHostContextSchema,
-    });
 
 /**
  * Notification that Guest UI has completed initialization (Guest UI → Host).
@@ -865,3 +901,7 @@ export type UIActionResult =
     | { type: "prompt"; payload: { prompt: string } }
     | { type: "link"; payload: { url: string } }
     | { type: "notify"; payload: { message: string } };
+
+export interface SandboxConfig {
+    url: URL;
+}

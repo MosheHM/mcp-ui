@@ -1,0 +1,12 @@
+<div class="mcp-app-renderer-container" style="width: 100%; height: 100%; display: flex; flex-direction: column">
+    @if (error()) {
+    <div style="color: red; padding: 1rem">Error: {{ error()?.message }}</div>
+    }
+
+    @if (appBridge() && currentHtml()) {
+    <mcp-app-frame [html]="currentHtml()" [sandbox]="sandbox()" [appBridge]="appBridge()!"
+        [toolInput]="{ arguments: toolInput() }" [toolResult]="toolResult()" (sizeChanged)="handleSizeChanged($event)"
+        (loggingMessage)="handleLoggingMessage($event)" (errorOccurred)="handleError($event)">
+    </mcp-app-frame>
+    }
+</div>
